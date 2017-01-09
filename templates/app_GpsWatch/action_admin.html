@@ -1,0 +1,16 @@
+ <!-- action usual -->
+ [#if DATA_SOURCE="gpswatch" || DATA_SOURCE=""#]
+ <!-- table mysensor search -->
+ [#if VIEW_MODE="admin_main" || VIEW_MODE=""#]
+  [#inc admin_main.html#]
+ [#endif VIEW_MODE#]
+
+ <!-- table node edit -->
+ [#if VIEW_MODE="device_edit"#]
+    <a class="btn btn-defaul btn-primary" href="?">&lt;&lt;&lt; <#LANG_BACK#></a>
+    <p align=center>
+    [#inc device_edit.html#]
+[#endif VIEW_MODE#]
+
+[#endif DATA_SOURCE#]
+
