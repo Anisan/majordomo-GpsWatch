@@ -23,12 +23,16 @@ class Protocol
             $data = substr($command, $pos+1);
         }
         $res ="";
-        echo ("Command:".$cmd." Data:".$data.PHP_EOL);
+        //echo ("Command:".$cmd." Data:".$data.PHP_EOL);
         switch ($cmd) {
             case "LK":
                 $res = $this->commandLink($id,$data);
                 break;
             case "UD":
+                $res = $this->commandLocation($id,$data);
+                break;
+            case "AL": // alarm
+            //todo short data
                 $res = $this->commandLocation($id,$data);
                 break;
             case "TKQ":
@@ -40,7 +44,7 @@ class Protocol
                 $res = "TKQ2";
                 break;
         }
-        echo $res.PHP_EOL;
+        //echo $res.PHP_EOL;
         return $res;
     }
     
@@ -68,6 +72,11 @@ class Protocol
         $this->parseLocationData($id,$data);
         // Platform reply: Nodata
         return "";
+    }
+    
+    function getBit($data, $num)
+    {
+        return ($data >> $num) & 1;
     }
     
     function parseLocationData($id,$data){
@@ -126,6 +135,11 @@ The nearby base station 3 signal strength	100	Signal strength
         $batt = $parts[12];
         $device = SQLSelectOne("SELECT * FROM gw_device WHERE DEVICE_ID='$id'");
 
+        $statement = hexdec($parts[15]);
+        $device["ONHAND"] = !$this->getBit($statement,3);
+        $device["BATTERY"] = $batt;
+        SQLUpdate("gw_device", $device);
+        
         $log = array();
         $log["DEVICE_ID"] = $device['ID'];
         $log["ADDED"] = date('Y/m/d H:i:s',$timestamp);

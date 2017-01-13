@@ -39,7 +39,7 @@ function sizeFilter( $bytes )
   $out['sortby']=$sortby_device;
   
   // SEARCH RESULTS  
-  $res=SQLSelect("SELECT *,gw_device.DEVICE_ID as WATCH_ID FROM gw_device left join (select * from gw_traffic where date_traffic>CURDATE()) tr on tr.DEVICE_ID=gw_device.ID ORDER BY ".$sortby_device);
+  $res=SQLSelect("SELECT *,gw_device.ID as DEV_ID,gw_device.DEVICE_ID as WATCH_ID FROM gw_device left join (select * from gw_traffic where date_traffic>CURDATE()) tr on tr.DEVICE_ID=gw_device.ID ORDER BY ".$sortby_device);
   if ($res[0]['DEVICE_ID']) {  
     paging($res, 20, $out); // search result paging
     colorizeArray($res);

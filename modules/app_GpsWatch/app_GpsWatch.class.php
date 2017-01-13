@@ -139,6 +139,13 @@ function admin(&$out) {
    setGlobal('cycle_GpsWatch','restart');
    $this->redirect("?");
  }
+ if($this->view_mode == 'device_edit') {
+    $this->edit_device($out, $this->id);
+ }
+ if($this->view_mode == 'device_delete') {
+    $this->delete_device($this->id);
+    $this->redirect("?");
+ }
  if($this->view_mode == '' || $this->view_mode == 'search_ms') {
     if($this->tab == 'device') {
         $this->gw_device($out);
@@ -150,6 +157,18 @@ function admin(&$out) {
 
 function gw_device(&$out) {
     require(DIR_MODULES . $this->name . '/gw_device.inc.php');
+}
+
+function edit_device(&$out, $id) {
+    require(DIR_MODULES . $this->name . '/device_edit.inc.php');
+}
+function delete_device($id) {
+    $rec = SQLSelectOne("SELECT * FROM gw_device WHERE ID='$id'");
+    // some action for related tables
+    SQLExec("DELETE FROM gw_device WHERE ID='" . $rec['ID'] . "'");
+    SQLExec("DELETE FROM gw_traffic WHERE DEVICE_ID='" . $rec['ID'] . "'");
+    SQLExec("DELETE FROM gw_cmd WHERE DEVICE_ID='" . $rec['ID'] . "'");
+    SQLExec("DELETE FROM gw_log WHERE DEVICE_ID='" . $rec['ID'] . "'");
 }
 /**
 * FrontEnd

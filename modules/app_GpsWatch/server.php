@@ -67,12 +67,20 @@ class GpsWatchServer
     function checkDisconnect()
     {
         foreach ($this->changed as $changed_socket) {
+            echo "Disconnect".PHP_EOL;
+            print_r ($changed_socket);
             $buf = @socket_read($changed_socket, 1024, PHP_NORMAL_READ);
             if ($buf !== false) { // check disconnected client
                 continue;
             }
             // remove client for $clients array
             $key_socket = $this->findBySocket($changed_socket);
+            if (is_null($key_socket))
+            {
+                $key_socket = $this->findByProxy($socket);
+            }
+            socket_close($this->clients[$key_socket]["socket"]);
+            socket_close($this->clients[$key_socket]["proxy"]);
             $id = $this->clients[$key_socket]["id"];
             $response = 'Client #'.$id ." ". $this->clients[$key_socket]["ip"] . ' has disconnected\n';
             // change online status
@@ -167,7 +175,7 @@ class GpsWatchServer
         $key_socket = $this->findByIp($ip);
         if (is_null($key_socket)) $isWatch = FALSE;
                 
-        echo "Get message from ".$ip;
+        echo date("H:i:s")." Get message from ".$ip;
         if (!$isWatch)
         {
             echo " server".PHP_EOL;
@@ -187,7 +195,7 @@ class GpsWatchServer
         if (preg_match_all($re, $str, $matches,PREG_SET_ORDER))
         {
             // Print the entire match result [SG*8800000015*0002*LK][SG*8800000015*0002*LK]
-            echo ("Count command: ". count($matches).PHP_EOL);
+            //echo ("Count command: ". count($matches).PHP_EOL);
                     //print_r($matches);
                     foreach ($matches as $match)
                     {
@@ -195,7 +203,7 @@ class GpsWatchServer
                         $len = hexdec($match[3]);
                         $cmd = $match[4];
                         $this->clients[$key_socket]["id"] = $id;
-                        echo ("ID:".$id." Lenght:".$len." Command:".$cmd);
+                        //echo ("ID:".$id." Lenght:".$len." Command:".$cmd);
                         // record device
                         $device = SQLSelectOne("SELECT * FROM gw_device WHERE DEVICE_ID='$id'");
                         if ($device['DEVICE_ID']) {
@@ -228,12 +236,12 @@ class GpsWatchServer
                         //todo check len command
                         if (strlen($cmd) == $len)
                         {
-                            echo (" OK".PHP_EOL);
+                            //echo (" OK".PHP_EOL);
                             //todo proc command
                             $res = $this->protocol->processCommand($id,$cmd);
                             if ($res!=""){
                                 $msg = $this->createMessage($id,$res);
-                                echo ("Client #". $this->clients[$key_socket]["id"] ." ".  $ip . " sent ". $msg . PHP_EOL);
+                                //echo ("Client #". $this->clients[$key_socket]["id"] ." ".  $ip . " sent ". $msg . PHP_EOL);
                                 //$this->sendMessage($socket , $msg . PHP_EOL);
                             }
                         }
