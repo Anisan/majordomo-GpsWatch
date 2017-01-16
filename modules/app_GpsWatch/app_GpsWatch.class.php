@@ -115,6 +115,22 @@ function run() {
 */
 function admin(&$out) {
  $this->getConfig();
+ global $sendCommand;
+ if ($sendCommand)
+ {
+    header("HTTP/1.0: 200 OK\n");
+    header('Content-Type: text/html; charset=utf-8');
+    global $id;
+    global $cmd;
+    global $param;
+    if ($cmd == 'msg') $this->sendMessage($id,$param);
+    if ($cmd == 'flower') $this->setFlower($id,$param);
+    if ($cmd == 'update') $this->setUpdate($id,$param);
+    if ($cmd == 'location') $this->position($id);
+    if ($cmd == 'find') $this->findWatch($id);
+    echo "Ok";
+    exit;
+ }
  $out['HOST']=$this->config['HOST'];
  if (!$out['HOST']) { $out['HOST']='0.0.0.0'; }
  $out['PORT']=$this->config['PORT'];
@@ -181,6 +197,43 @@ function usual(&$out) {
  $this->admin($out);
 }
 
+function addCommand($id,$data)
+{
+    $cmd = array();
+    $cmd['DEVICE_ID']=$id;
+    $cmd['DATA']=$data;
+    $cmd['CREATED']=date('Y/m/d H:i:s');
+    $cmd['ID'] = SQLInsert("gw_cmd", $cmd);
+    return $cmd['ID'];
+}
+
+function sendMessage($id,$msg)
+{
+    echo $msg.PHP_EOL;
+    $out = bin2hex(iconv('UTF-8', 'UTF-16BE', $msg));
+    echo $out.PHP_EOL;
+    return $this->addCommand($id,"MESSAGE,".$out);
+}
+
+function setUpdate($id,$second)
+{
+    return $this->addCommand($id,"UPLOAD,".$second);
+}
+
+function setFlower($id,$point)
+{
+    return $this->addCommand($id,"FLOWER,".$point);
+}
+
+function position($id)
+{
+    return $this->addCommand($id,"CR");
+}
+
+function findWatch($id)
+{
+    return $this->addCommand($id,"FIND");
+}
 /**
 * SERVER
 *

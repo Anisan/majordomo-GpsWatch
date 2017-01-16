@@ -62,6 +62,25 @@ class GpsWatchServer
             $this->checkMessageRecieved();
             $this->checkDisconnect();
         }
+        $this->sendCommands();
+    }
+    
+    function sendCommands()
+    {
+        $commands=SQLSelect("SELECT * FROM gw_cmd WHERE SENDED is null");
+        foreach($commands as $command) {
+            $device = SQLSelectOne("SELECT * FROM gw_device WHERE ID=".$command["DEVICE_ID"]);
+            $id = $device["DEVICE_ID"];
+            $msg = $this->createMessage($id,$command["DATA"]);
+            echo "Send command ".$msg.PHP_EOL;
+            $res = $this->sendMessageById($id, $msg);
+            if ($res)
+            {
+                echo "Sended ".PHP_EOL;
+                $command["SENDED"] = date('Y/m/d H:i:s');
+                SQLUpdate("gw_cmd",$command);
+            }
+        }  
     }
     
     function checkDisconnect()
@@ -111,7 +130,7 @@ class GpsWatchServer
     {
         $len = strlen($msg);
         $lenhex = str_pad(dechex($len), 4, "0", STR_PAD_LEFT);
-        return "[SG*".$id."*".$lenhex."*".$msg."]";
+        return "[3G*".$id."*".$lenhex."*".$msg."]";
     }
     
     function waitForChange()
@@ -284,9 +303,23 @@ class GpsWatchServer
         }
         return NULL;
     }
+    function findById($id)
+    {
+        foreach ($this->clients as $key => $childarray)
+        {
+            if ($childarray["id"] == $id)
+            {
+                return $key;
+            }
+        }
+        return NULL;
+    }
     function sendMessageById($id, $msg)
     {
-        $client = $this->clients[$this->id_clients[$id]];
+        $key_socket = $this->findById($id);
+        if (is_null($key_socket))
+            return FALSE;
+        $client = $this->clients[$key_socket]["socket"];
         $this->sendMessage($client,$msg);
         return TRUE;
     }
