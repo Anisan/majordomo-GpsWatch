@@ -17,6 +17,8 @@ if ($this->mode=='update') {
     }
     global $name;
     $rec['NAME']=$name;
+    global $linked_object;
+    $rec['LINKED_OBJECT']=$linked_object;
         
     //UPDATING RECORD
     if ($ok) {

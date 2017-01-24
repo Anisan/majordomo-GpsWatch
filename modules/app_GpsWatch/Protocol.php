@@ -35,6 +35,12 @@ class Protocol
             //todo short data
                 $res = $this->commandLocation($id,$data);
                 break;
+            case "TK":
+                // voice message
+                $fp = fopen('/home/www/files/'.date('Y/m/d H:i:s').'.txt', 'w');
+                fwrite($fp, $data);
+                fclose($fp);
+                break;
             case "TKQ":
             //todo
                 $res = "TKQ";
@@ -61,7 +67,9 @@ class Protocol
                 $device['BATTERY'] = $battery;
                 SQLUpdate("gw_device", $device); // update
                 // todo set link object
-                // setGlobal("object.battery",$battery)
+                if (isset($device['LINKED_OBJECT']))
+                    setGlobal($device['LINKED_OBJECT'].".battery",$battery);
+                
             }
         }
         return "LK";
@@ -128,24 +136,50 @@ The nearby base station 3 signal strength	100	Signal strength
         $dt = date_parse_from_format("dmy His", $parts[0]." ".$parts[1]);
         $dtime = DateTime::createFromFormat("dmy His", $parts[0]." ".$parts[1]);
         $timestamp = $dtime->getTimestamp();
+        
+        $provider = "gsm";
+        $countGsmStation = $parts[16];
+        $indWifiCount = 16 + 3 + 3*$countGsmStation + 1;
+        $countWifiPoint = $parts[$indWifiCount];
+        if ($countWifiPoint > 0)$provider = "wifi";
+        if ($parts[2] == "A") $provider = "gps";
+        
         $lat = $parts[3];
         if ($parts[4] == "S") $lat = -$lat;
         $lon = $parts[5];
         if ($parts[6] == "W") $lon = -$lon;
         $batt = $parts[12];
+        
+        $speed = 1.60934 * floatval($parts[7]); // 7 Speed	5.21	5.21miles/hour.
+        $dir = $parts[8]; //8 Direction	152	The direction is in 152 degree.
+        $alt = $parts[9]; //9 Alititude	100	The unit is meter
+        
         $device = SQLSelectOne("SELECT * FROM gw_device WHERE DEVICE_ID='$id'");
 
         $statement = hexdec($parts[15]);
-        $device["ONHAND"] = !$this->getBit($statement,3);
+        $onhand = !$this->getBit($statement,3);
+        $device["ONHAND"] = $onhand;
         $device["BATTERY"] = $batt;
         SQLUpdate("gw_device", $device);
+        
+        if (isset($device['LINKED_OBJECT']))
+        {
+            setGlobal($device['LINKED_OBJECT'].".onhand",$onhand);
+            setGlobal($device['LINKED_OBJECT'].".battery",$batt);
+            setGlobal($device['LINKED_OBJECT'].".sos_alarm",$this->getBit($statement,16));
+        }
+
         
         $log = array();
         $log["DEVICE_ID"] = $device['ID'];
         $log["ADDED"] = date('Y/m/d H:i:s',$timestamp);
         $log["LAT"] = $lat;
         $log["LON"] = $lon;
+        $log["ALT"] = $alt;
+        $log["DIRECTION"] = $dir;
+        $log["SPEED"] = $speed;
         $log["BATTLEVEL"] = $batt;
+        $log["PROVIDER"] = $provider;
         //print_r($log);
         SQLInsert("gw_log", $log);
         
@@ -155,17 +189,15 @@ The nearby base station 3 signal strength	100	Signal strength
         $url .= "&longitude=".$lon;
         $url .= "&deviceid=".$id;
         $url .= "&battlevel=".$batt;
+        $url .= "&provider=".$provider;
+        $url .= "&altitude=".$alt;
+        $url .= "&bearing=".$dir;
+        $url .= "&speed=".$speed;
+            
         /*req.append("&accuracy=");
-            req.append("&altitude=");
-            req.append("&provider=");
-            req.append("&bearing=");
-            req.append("&speed=");
-            req.append("&time=");
                 req.append("&charging=1");
                 req.append("&charging=0");
-            req.append("&secret=");
-            req.append("&deviceid=");
-            req.append("&subscriberid=");*/
+        */
         getUrl($url);
         
     }

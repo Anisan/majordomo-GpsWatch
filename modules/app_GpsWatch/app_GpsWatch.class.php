@@ -285,7 +285,9 @@ function dbInstall($data) {
  gw_device: LAST_ONLINE datetime
  gw_device: LAST_IP text
  gw_device: BATTERY int(3) unsigned NOT NULL DEFAULT '0' 
- gw_device: ONHAND int(3) unsigned NOT NULL DEFAULT '0' 
+ gw_device: ONHAND int(3) unsigned NOT NULL DEFAULT '0'
+ gw_device: LINKED_OBJECT text
+ 
  
  gw_traffic: ID int(10) unsigned NOT NULL auto_increment
  gw_traffic: DEVICE_ID int(10) NOT NULL
@@ -305,6 +307,7 @@ function dbInstall($data) {
  gw_log: LAT float DEFAULT '0' NOT NULL
  gw_log: LON float DEFAULT '0' NOT NULL
  gw_log: ALT float DEFAULT '0' NOT NULL
+ gw_log: DIRECTION float DEFAULT '0' NOT NULL
  gw_log: PROVIDER varchar(30) NOT NULL DEFAULT ''
  gw_log: SPEED float DEFAULT '0' NOT NULL
  gw_log: BATTLEVEL int(3) NOT NULL DEFAULT '0'

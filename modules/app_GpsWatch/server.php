@@ -98,8 +98,10 @@ class GpsWatchServer
             {
                 $key_socket = $this->findByProxy($socket);
             }
-            socket_close($this->clients[$key_socket]["socket"]);
-            socket_close($this->clients[$key_socket]["proxy"]);
+            if (isset($this->clients[$key_socket]["socket"]))
+                socket_close($this->clients[$key_socket]["socket"]);
+            if (isset($this->clients[$key_socket]["proxy"]))
+                socket_close($this->clients[$key_socket]["proxy"]);
             $id = $this->clients[$key_socket]["id"];
             $response = 'Client #'.$id ." ". $this->clients[$key_socket]["ip"] . ' has disconnected\n';
             // change online status
@@ -191,7 +193,7 @@ class GpsWatchServer
     {
         socket_getpeername($socket, $ip);
         $isWatch = TRUE;
-        $key_socket = $this->findByIp($ip);
+        $key_socket = $this->findBySocket($socket);
         if (is_null($key_socket)) $isWatch = FALSE;
                 
         echo date("H:i:s")." Get message from ".$ip;
@@ -275,17 +277,6 @@ class GpsWatchServer
         foreach ($this->clients as $key => $childarray)
         {
             if ($childarray["socket"] == $socket)
-            {
-                return $key;
-            }
-        }
-        return NULL;
-    }
-    function findByIp($ip)
-    {
-        foreach ($this->clients as $key => $childarray)
-        {
-            if ($childarray["ip"] == $ip)
             {
                 return $key;
             }
