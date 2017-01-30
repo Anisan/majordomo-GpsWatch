@@ -194,7 +194,8 @@ function delete_device($id) {
 * @access public
 */
 function usual(&$out) {
- $this->admin($out);
+  $this->getConfig();
+  require(DIR_MODULES.$this->name.'/usual.inc.php');
 }
 
 function addCommand($id,$data)
