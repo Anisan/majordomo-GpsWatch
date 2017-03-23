@@ -12,7 +12,7 @@
 <div class="form-group">
  <label class="col-lg-4 control-label">Device ID</label>
 [#if ID==""#]
-  <div class="controls"><input  type="text" name="user_id" value="" class="form-control input"></div>
+  <div class="controls"><input  type="text" name="device_id" value="" class="form-control input"></div>
  [#else#]
   <div class="controls">[#DEVICE_ID#]</div>
 [#endif ID#]
@@ -43,27 +43,4 @@
 </fieldset>
 </form>
 <hr/>
-<script type="text/javascript">
-	function sendCommand(id, cmd, input){ 
-		var url="?sendCommand=1&id="+id+"&cmd="+cmd;
-		if (input == 1)
-		{
-			var text = prompt("Input parameter "+cmd+":", '');
-			if (text == null) return;
-			url=url+"&param="+text;
-		}
-		$.ajax({  
-			url: url,  
-			cache: false,  
-			success: function(html){  
-				alert(html);  
-			}  
-		});  
-	}  
-</script> 
-<button onclick="sendCommand([#ID#],'msg',1);return false;" title="Send message" class="btn btn-default">Send message</button>
-<button onclick="sendCommand([#ID#],'flower',1);return false;" title="Set Flower" class="btn btn-default">Set flower</button>
-<button onclick="sendCommand([#ID#],'update',1);return false;" title="Set Update" class="btn btn-default">Set Update</button>
-<button onclick="sendCommand([#ID#],'location',0);return false;" title="Update Location" class="btn btn-default">Update Location</button>
-<button onclick="sendCommand([#ID#],'find',0);return false;" title="Set Flower" class="btn btn-default">Find watch</button>
-
+[#inc device_settings.html#]

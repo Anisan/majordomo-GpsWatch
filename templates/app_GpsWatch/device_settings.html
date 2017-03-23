@@ -1,0 +1,138 @@
+<script type="text/javascript">
+	function sendCommand(id, cmd, input){ 
+		var url="?sendCommand=1&id="+id+"&cmd="+cmd;
+		if (input == 1)
+		{
+			var text = prompt("Input parameter "+cmd+":", '');
+			if (text == null) return;
+			url=url+"&param="+text;
+		}
+		$.ajax({  
+			url: url,  
+			cache: false,  
+			success: function(html){  
+				alert(html);  
+			}  
+		});  
+	}
+    function sendCommandParam(id, cmd, val){ 
+		var url="?sendCommand=1&id="+id+"&cmd="+cmd+"&param="+val;
+        console.log(url);
+		$.ajax({  
+			url: url,  
+			cache: false,  
+			success: function(html){  
+				alert(html);  
+			}  
+		});  
+	}
+    function sendSOS(id){ 
+        var val = $('#sos1').val()+","+$('#sos2').val()+","+$('#sos3').val();
+        sendCommandParam(id,"sos",val);
+	}      
+</script> 
+
+<ul id="tab" class="nav nav-tabs">
+    <li><a data-toggle="tab" href="#panel_settings" class="active">Settings</a></li>
+    <li><a data-toggle="tab" href="#panel_alarmclock">Alarm clock</a></li>
+    <li><a data-toggle="tab" href="#panel_phonebook">Phone book</a></li>
+    <li><a data-toggle="tab" href="#panel_sos">SOS</a></li>
+    <li><a data-toggle="tab" href="#panel_commands">Commands</a></li>
+</ul>
+<br>
+<div class="tab-content">
+    <div id="panel_settings" class="tab-pane fade in">
+        <div class="form-group">
+		<label class="control-label col-lg-1">Profile: </label>
+		<div class="col-lg-4">
+			<select name="profile" class="form-control" id="profile">
+				<option value="1"[#if PROFILE=="1"#] selected[#endif#]>Default</option>
+				<option value="2"[#if PROFILE=="2"#] selected[#endif#]>Decrease volume</option>
+				<option value="3"[#if PROFILE=="3"#] selected[#endif#]>Vibration</option>   
+				<option value="4"[#if PROFILE=="4"#] selected[#endif#]>Silent</option>   
+			</select>
+        </div>
+        <button onclick="sendCommandParam([#ID#],'profile',$('#profile').val());return false;" title=Set profile" class="btn btn-default">Set</button>
+        </div>
+        <div class="form-group">
+		<label class="control-label col-lg-1">Updates: </label>
+		<div class="col-lg-4">
+			<select name="updates" class="form-control" id="updates">
+				<option value="60"[#if UPDATE_INTERVAL=="60"#] selected[#endif#]>1 min </option>
+				<option value="300"[#if UPDATE_INTERVAL=="300"#] selected[#endif#]>5 min</option>
+				<option value="600"[#if UPDATE_INTERVAL=="600"#] selected[#endif#]>10 min (optimal)</option>
+				<option value="1800"[#if UPDATE_INTERVAL=="1800"#] selected[#endif#]>30 min</option>   
+				<option value="3600"[#if UPDATE_INTERVAL=="3600"#] selected[#endif#]>1 hour</option>   
+			</select>
+        </div>
+        <button onclick="sendCommandParam([#ID#],'update',$('#updates').val());return false;" title=Set profile" class="btn btn-default">Set</button>
+        </div>
+    </div>
+    <div id="panel_commands" class="tab-pane fade in">
+        <button onclick="sendCommand([#ID#],'msg',1);return false;" title="Send message" class="btn btn-default">Send message</button><br>
+        <button onclick="sendCommand([#ID#],'flower',1);return false;" title="Set Flower" class="btn btn-default">Set flower</button>
+        Current value: [#FLOWER#]
+        <br>
+        <button onclick="sendCommand([#ID#],'update',1);return false;" title="Set Update" class="btn btn-default">Set Update</button>
+        Current update interval: [#UPDATE_INTERVAL#] sec
+        <br>
+        <button onclick="sendCommand([#ID#],'location',0);return false;" title="Update Location" class="btn btn-default">Update Location</button><br>
+        <button onclick="sendCommand([#ID#],'find',0);return false;" title="Set Flower" class="btn btn-default">Find watch</button><br>
+        <button onclick="sendCommand([#ID#],'command',1);return false;" title="Command" class="btn btn-default">Command</button><br>
+    </div>
+    <div id="panel_alarmclock" class="tab-pane fade in">
+        Cooming soon.....
+    </div>
+    <div id="panel_phonebook" class="tab-pane fade in">
+        <table   class="table table-stripped">
+        <thead>
+            <tr>
+                <th>&nbsp;</th>
+                <th>Name</th>
+                <th>Phone</th> 
+            </tr>
+        </thead>
+        <tbody> 
+        [#begin PHONEBOOK#]
+            <tr>
+                <th>[#ID#]</th>
+                <th><input  type="text" name="name[#ID#]" value="[#NAME#]" class="form-control input"></th>
+                <th><input  type="text" name="phone[#ID#]" value="[#PHONE#]" class="form-control input"></th> 
+            </tr>
+        [#end PHONEBOOK#]
+        </tbody> 
+        </table>
+        <button onclick="sendCommand(,'msg',1);return false;" title="Save" class="btn btn-primary">Save</button><br>
+    </div>
+    <div id="panel_sos" class="tab-pane fade in">
+        <div class="form-horizontal">
+        <div class="form-group">
+            <label class="control-label col-lg-2">Phone 1: </label>
+            <div class="col-lg-4">
+            <input  type="text" id="sos1" name="sos1" value="[#SOS1#]" class="form-control input">
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="control-label col-lg-2">Phone 2: </label>
+            <div class="col-lg-4">
+            <input  type="text" id="sos2" name="sos2" value="[#SOS2#]" class="form-control input">
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="control-label col-lg-2">Phone 3: </label>
+            <div class="col-lg-4">
+            <input  type="text" id="sos3" name="sos3" value="[#SOS3#]" class="form-control input">
+            </div>
+        </div>
+        <div class="form-actions">
+        <button onclick="sendSOS([#ID#]);return false;" title=Set profile" class="btn btn-default">Save</button>
+        </div>
+        </div>
+    </div>
+</div>
+
+<hr/>
+<script type="text/javascript">
+$('#tab a:first').tab('show');
+</script>
+

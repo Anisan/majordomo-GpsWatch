@@ -25,6 +25,18 @@ class Protocol
         $res ="";
         //echo ("Command:".$cmd." Data:".$data.PHP_EOL);
         switch ($cmd) {
+            case "UPLOAD":
+                $res = $this->commandUpload($id,$data);
+                break;
+            case "SOS":
+                $res = $this->commandSos($id,$data);
+                break;
+            case "PROFILE":
+                $res = $this->commandProfile($id,$data);
+                break;
+            case "FLOWER":
+                $res = $this->commandFlower($id,$data);
+                break;
             case "LK":
                 $res = $this->commandLink($id,$data);
                 break;
@@ -52,6 +64,47 @@ class Protocol
         }
         //echo $res.PHP_EOL;
         return $res;
+    }
+    
+    function update_settings($id,$property,$value)
+    {
+        $device = SQLSelectOne("SELECT * FROM gw_device WHERE DEVICE_ID='".$id."'");
+        if ($device['ID']) {
+            $rec = SQLSelectOne("SELECT * FROM gw_settings WHERE DEVICE_ID=".$device['ID']);
+            $rec[$property]=$value;
+            //echo ("Update ".$property." value:".$value.PHP_EOL);
+            if ($rec['ID']) {
+                SQLUpdate('gw_settings', $rec); // update
+            } else {
+                $rec['DEVICE_ID'] = $id;
+                $rec['ID']=SQLInsert('gw_settings', $rec); // adding new record
+                $id=$rec['ID'];
+            }  
+        }
+    }
+    
+    function commandUpload($id,$data){
+        if ($data!="")
+            $this->update_settings($id,"UPDATE_INTERVAL",$data);
+        return "";
+    }
+    
+    function commandSos($id,$data){
+        if ($data!="")
+            $this->update_settings($id,"SOS",$data);
+        return "";
+    }
+    
+    function commandProfile($id,$data){
+        if ($data!="")
+            $this->update_settings($id,"PROFILE",$data);
+        return "";
+    }
+    
+    function commandFlower($id,$data){
+        if ($data!="")
+            $this->update_settings($id,"FLOWER",$data);
+        return "";
     }
     
     function commandLink($id,$data){

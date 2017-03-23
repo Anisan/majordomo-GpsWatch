@@ -123,11 +123,14 @@ function admin(&$out) {
     global $id;
     global $cmd;
     global $param;
+    if ($cmd == 'sos') $this->setSosPhone($id,$param);
     if ($cmd == 'msg') $this->sendMessage($id,$param);
     if ($cmd == 'flower') $this->setFlower($id,$param);
     if ($cmd == 'update') $this->setUpdate($id,$param);
     if ($cmd == 'location') $this->position($id);
     if ($cmd == 'find') $this->findWatch($id);
+    if ($cmd == 'command') $this->addCommand($id,$param);
+    if ($cmd == 'profile') $this->setProfile($id,$param);
     echo "Ok";
     exit;
  }
@@ -182,6 +185,7 @@ function delete_device($id) {
     $rec = SQLSelectOne("SELECT * FROM gw_device WHERE ID='$id'");
     // some action for related tables
     SQLExec("DELETE FROM gw_device WHERE ID='" . $rec['ID'] . "'");
+    SQLExec("DELETE FROM gw_settings WHERE ID='" . $rec['ID'] . "'");
     SQLExec("DELETE FROM gw_traffic WHERE DEVICE_ID='" . $rec['ID'] . "'");
     SQLExec("DELETE FROM gw_cmd WHERE DEVICE_ID='" . $rec['ID'] . "'");
     SQLExec("DELETE FROM gw_log WHERE DEVICE_ID='" . $rec['ID'] . "'");
@@ -198,6 +202,20 @@ function usual(&$out) {
   require(DIR_MODULES.$this->name.'/usual.inc.php');
 }
 
+
+function update_settings($id,$property,$value)
+{
+    $rec = SQLSelectOne("SELECT * FROM gw_settings WHERE DEVICE_ID='$id'");
+    $rec[$property]=$value;
+    if ($rec['ID']) {
+        SQLUpdate('gw_settings', $rec); // update
+    } else {
+        $rec['DEVICE_ID'] = $id;
+        $rec['ID']=SQLInsert('gw_settings', $rec); // adding new record
+        $id=$rec['ID'];
+    }  
+}
+
 function addCommand($id,$data)
 {
     $cmd = array();
@@ -212,17 +230,29 @@ function sendMessage($id,$msg)
 {
     echo $msg.PHP_EOL;
     $out = bin2hex(iconv('UTF-8', 'UTF-16BE', $msg));
-    echo $out.PHP_EOL;
+    //echo $out.PHP_EOL;
     return $this->addCommand($id,"MESSAGE,".$out);
 }
 
 function setUpdate($id,$second)
 {
+    $this->update_settings($id,"UPDATE_INTERVAL",$second);
     return $this->addCommand($id,"UPLOAD,".$second);
+}
+function setSosPhone($id,$phones)
+{
+    $this->update_settings($id,"SOS",$phones);
+    return $this->addCommand($id,"SOS,".$phones);
+}
+function setProfile($id,$profile)
+{
+    $this->update_settings($id,"PROFILE",$profile);
+    return $this->addCommand($id,"PROFILE,".$profile);
 }
 
 function setFlower($id,$point)
 {
+    $this->update_settings($id,"FLOWER",$point);
     return $this->addCommand($id,"FLOWER,".$point);
 }
 
@@ -248,7 +278,7 @@ function initServer() {
     $host=$this->config['HOST'];
     $port=$this->config['PORT'];
     include_once(DIR_MODULES . 'app_GpsWatch/server.php');
-    $this->server = new GpsWatchServer($host, $port,$this->config['HOST_PROXY'],$this->config['PORT_PROXY']);
+    $this->server = new GpsWatchServer($host, $port, $this->config['ENABLE_PROXY'], $this->config['HOST_PROXY'], $this->config['PORT_PROXY']);
 
 }
 function cycle() {
@@ -289,6 +319,12 @@ function dbInstall($data) {
  gw_device: ONHAND int(3) unsigned NOT NULL DEFAULT '0'
  gw_device: LINKED_OBJECT text
  
+ gw_settings: ID int(10) unsigned NOT NULL auto_increment
+ gw_settings: DEVICE_ID int(10) NOT NULL
+ gw_settings: UPDATE_INTERVAL int(10)
+ gw_settings: FLOWER int(10)
+ gw_settings: SOS TEXT
+ gw_settings: PROFILE int(3)
  
  gw_traffic: ID int(10) unsigned NOT NULL auto_increment
  gw_traffic: DEVICE_ID int(10) NOT NULL

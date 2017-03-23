@@ -6,13 +6,15 @@ class GpsWatchServer
     protected $clients;
     protected $changed;
     protected $protocol;
+    protected $enable_proxy;
     protected $proxy;
     protected $proxyport;
     
-    function __construct($host = 'localhost', $port = 2902, $proxy = '52.28.132.157',$proxyport = 8001)
+    function __construct($host = 'localhost', $port = 2902, $enable_proxy = FALSE, $proxy = '52.28.132.157',$proxyport = 8001)
     {
         $this->clients = [];
         
+        $this->enable_proxy = $enable_proxy;
         $this->proxy = $proxy;
         $this->proxyport = $proxyport;
         
@@ -67,7 +69,7 @@ class GpsWatchServer
     
     function sendCommands()
     {
-        $commands=SQLSelect("SELECT * FROM gw_cmd WHERE SENDED is null");
+        $commands=SQLSelect("SELECT * FROM gw_cmd WHERE SENDED is null AND CREATED > (now() - interval 5 minute)");
         foreach($commands as $command) {
             $device = SQLSelectOne("SELECT * FROM gw_device WHERE ID=".$command["DEVICE_ID"]);
             $id = $device["DEVICE_ID"];
@@ -80,6 +82,7 @@ class GpsWatchServer
                 $command["SENDED"] = date('Y/m/d H:i:s');
                 SQLUpdate("gw_cmd",$command);
             }
+            
         }  
     }
     
@@ -96,8 +99,9 @@ class GpsWatchServer
             $key_socket = $this->findBySocket($changed_socket);
             if (is_null($key_socket))
             {
-                $key_socket = $this->findByProxy($socket);
+                $key_socket = $this->findByProxy($changed_socket);
             }
+            echo " Key:". $key_socket . PHP_EOL;
             if (isset($this->clients[$key_socket]["socket"]))
                 socket_close($this->clients[$key_socket]["socket"]);
             if (isset($this->clients[$key_socket]["proxy"]))
@@ -165,6 +169,8 @@ class GpsWatchServer
     
     function createSocket()
     {
+        if (!$this->enable_proxy)
+            return NULL;
         /* Получаем порт сервиса WWW. */
         $service_port = $this->proxyport;
 
@@ -203,13 +209,14 @@ class GpsWatchServer
             $key_socket = $this->findByProxy($socket);
             echo ("Server #". $this->clients[$key_socket]["id"] ." ".  $ip . " recv ". trim($buffer) . PHP_EOL);
             $this->sendMessage($this->clients[$key_socket]["socket"] , $buffer);
-            return;
         }
-        echo " watch".PHP_EOL;
-            
-        echo ("Client #". $this->clients[$key_socket]["id"] ." ".  $ip . " recv ". trim($buffer) . PHP_EOL);
-        @socket_write($this->clients[$key_socket]["proxy"],$buffer,strlen($buffer)); 
-        
+        else
+        {
+            echo " watch".PHP_EOL;
+            echo ("Client #". $this->clients[$key_socket]["id"] ." ".  $ip . " recv ". trim($buffer) . PHP_EOL);
+            if ($this->enable_proxy)
+                @socket_write($this->clients[$key_socket]["proxy"],$buffer,strlen($buffer)); 
+        }
         $re = '/\[(.+)\*(\d+)\*(\w+)\*(.+)\]/';
         $str = trim($buffer);
                 
@@ -217,59 +224,61 @@ class GpsWatchServer
         {
             // Print the entire match result [SG*8800000015*0002*LK][SG*8800000015*0002*LK]
             //echo ("Count command: ". count($matches).PHP_EOL);
-                    //print_r($matches);
-                    foreach ($matches as $match)
-                    {
-                        $id = $match[2];
-                        $len = hexdec($match[3]);
-                        $cmd = $match[4];
-                        $this->clients[$key_socket]["id"] = $id;
-                        //echo ("ID:".$id." Lenght:".$len." Command:".$cmd);
-                        // record device
-                        $device = SQLSelectOne("SELECT * FROM gw_device WHERE DEVICE_ID='$id'");
-                        if ($device['DEVICE_ID']) {
-                            // update IP
-                            $device['ONLINE']=1;
-                            $device['LAST_ONLINE']=date('Y/m/d H:i:s');;
-                            $device['LAST_IP']=$ip;
-                            SQLUpdate("gw_device", $device); // update
-                        } else {
-                            $device['DEVICE_ID']=$id;
-                            $device['NAME']=$id;
-                            $device['CREATED']=date('Y/m/d H:i:s');;
-                            $device['ONLINE']=1;
-                            $device['LAST_ONLINE']=date('Y/m/d H:i:s');;
-                            $device['LAST_IP']=$ip;
-                            $device['ID'] = SQLInsert("gw_device", $device); // adding new record
-                        }
-                        $this->clients[$key_socket]["device_id"] = $device['ID'];
-                        $traffic = SQLSelectOne("select * from gw_traffic where date(DATE_TRAFFIC)=date(now()) and DEVICE_ID=".$device['ID']);
-                        if ($traffic['DEVICE_ID']) {
-                            $traffic['DOWNLOAD']+=strlen($str);
-                            SQLUpdate("gw_traffic", $traffic); // update
-                        } else {
-                            $traffic['DEVICE_ID']=$device['ID'];
-                            $traffic['DATE_TRAFFIC']=date('Y/m/d H:i:s');;
-                            $traffic['DOWNLOAD']=strlen($str);
-                            $traffic['UPLOAD']=0;
-                            SQLInsert("gw_traffic", $traffic);
-                        }
-                        //todo check len command
-                        if (strlen($cmd) == $len)
-                        {
-                            //echo (" OK".PHP_EOL);
-                            //todo proc command
-                            $res = $this->protocol->processCommand($id,$cmd);
-                            if ($res!=""){
-                                $msg = $this->createMessage($id,$res);
-                                //echo ("Client #". $this->clients[$key_socket]["id"] ." ".  $ip . " sent ". $msg . PHP_EOL);
-                                //$this->sendMessage($socket , $msg . PHP_EOL);
-                            }
-                        }
-                        else
-                            echo (" ERROR - Wrong lenght (". strlen($cmd) .")".PHP_EOL);
+            //print_r($matches);
+            foreach ($matches as $match)
+            {
+                $id = $match[2];
+                $len = hexdec($match[3]);
+                $cmd = $match[4];
+                $this->clients[$key_socket]["id"] = $id;
+                //echo ("ID:".$id." Lenght:".$len." Command:".$cmd.PHP_EOL);
+                // record device
+                if ($isWatch)
+                {
+                    $device = SQLSelectOne("SELECT * FROM gw_device WHERE DEVICE_ID='$id'");
+                    if ($device['DEVICE_ID']) {
+                        // update IP
+                        $device['ONLINE']=1;
+                        $device['LAST_ONLINE']=date('Y/m/d H:i:s');;
+                        $device['LAST_IP']=$ip;
+                        SQLUpdate("gw_device", $device); // update
+                    } else {
+                        $device['DEVICE_ID']=$id;
+                        $device['NAME']=$id;
+                        $device['CREATED']=date('Y/m/d H:i:s');;
+                        $device['ONLINE']=1;
+                        $device['LAST_ONLINE']=date('Y/m/d H:i:s');;
+                        $device['LAST_IP']=$ip;
+                        $device['ID'] = SQLInsert("gw_device", $device); // adding new record
+                    }
+                    $this->clients[$key_socket]["device_id"] = $device['ID'];
+                    $traffic = SQLSelectOne("select * from gw_traffic where date(DATE_TRAFFIC)=date(now()) and DEVICE_ID=".$device['ID']);
+                    if ($traffic['DEVICE_ID']) {
+                        $traffic['DOWNLOAD']+=strlen($str);
+                        SQLUpdate("gw_traffic", $traffic); // update
+                    } else {
+                        $traffic['DEVICE_ID']=$device['ID'];
+                                $traffic['DATE_TRAFFIC']=date('Y/m/d H:i:s');;
+                                $traffic['DOWNLOAD']=strlen($str);
+                                $traffic['UPLOAD']=0;
+                                SQLInsert("gw_traffic", $traffic);
                     }
                 }
+                        //todo check len command
+                if (strlen($cmd) == $len)
+                {
+                    //todo proc command
+                    $res = $this->protocol->processCommand($id,$cmd);
+                    if ($res!="" && $isWatch && !$this->enable_proxy){
+                        $msg = $this->createMessage($id,$res);
+                        echo ("Client #". $this->clients[$key_socket]["id"] ." ".  $ip . " sent ". $msg . PHP_EOL);
+                        $this->sendMessage($socket , $msg . PHP_EOL);
+                    }
+                }
+                else
+                    echo (" ERROR - Wrong lenght (". strlen($cmd) .")".PHP_EOL);
+            }
+        }
     }
     
     function findBySocket($socket)

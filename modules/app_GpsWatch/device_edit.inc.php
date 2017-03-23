@@ -12,8 +12,8 @@ if ($this->mode=='update') {
   if ($this->tab=='') {
     if (!$rec['ID'])
     {
-        global $user_id;
-        $rec['USER_ID']=$user_id;
+        global $device_id;
+        $rec['DEVICE_ID']=$device_id;
     }
     global $name;
     $rec['NAME']=$name;
@@ -40,5 +40,7 @@ if ($this->mode=='update') {
 
 
 outHash($rec, $out);
+
+require(DIR_MODULES . $this->name . '/device_settings.inc.php');
   
 ?>
