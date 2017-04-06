@@ -10,7 +10,7 @@ class GpsWatchServer
     protected $proxy;
     protected $proxyport;
     
-    function __construct($host = 'localhost', $port = 2902, $enable_proxy = FALSE, $proxy = '52.28.132.157',$proxyport = 8001)
+    function __construct($host = 'localhost', $port = 2902, $enable_proxy = FALSE, $proxy = '52.28.132.157',$proxyport = 8001,$config)
     {
         $this->clients = [];
         
@@ -36,7 +36,7 @@ class GpsWatchServer
         $this->socket = $socket;
         
         include_once(DIR_MODULES . 'app_GpsWatch/Protocol.php');
-        $this->protocol = new Protocol();
+        $this->protocol = new Protocol($config['SCRIPT_NEWVOICE_ID']);
         
     }
     
@@ -82,7 +82,6 @@ class GpsWatchServer
                 $command["SENDED"] = date('Y/m/d H:i:s');
                 SQLUpdate("gw_cmd",$command);
             }
-            
         }  
     }
     
@@ -122,13 +121,19 @@ class GpsWatchServer
     function checkMessageRecieved()
     {
         foreach ($this->changed as $key => $socket) {
-            $buffer = null;
-            socket_getpeername($socket, $ip);
-            while(socket_recv($socket, $buffer, 1024, 0) >= 1) {
-                $this->processingMessage($socket, $buffer);
-                unset($this->changed[$key]);
-                break;
+            $data = null;
+            //echo "start recv ";
+            while(($flag=socket_recv($socket, $buffer, 1024 ,0))>0){
+                $data.=$buffer;
+                //echo $flag .",";
+                if (substr($buffer, -1, 1)== "]")
+                    break;
             }
+            //echo " end recv" . PHP_EOL;
+            //echo $data.PHP_EOL;
+            if ($data)
+                $this->processingMessage($socket, $data);
+            unset($this->changed[$key]);
         }
     }
     
@@ -217,7 +222,7 @@ class GpsWatchServer
             if ($this->enable_proxy)
                 @socket_write($this->clients[$key_socket]["proxy"],$buffer,strlen($buffer)); 
         }
-        $re = '/\[(.+)\*(\d+)\*(\w+)\*(.+)\]/';
+        $re = '/\[(.+)\*(\d+)\*(\w+)\*(.+)\]/s';
         $str = trim($buffer);
                 
         if (preg_match_all($re, $str, $matches,PREG_SET_ORDER))
@@ -320,8 +325,7 @@ class GpsWatchServer
         if (is_null($key_socket))
             return FALSE;
         $client = $this->clients[$key_socket]["socket"];
-        $this->sendMessage($client,$msg);
-        return TRUE;
+        return $this->sendMessage($client,$msg);
     }
     
     
@@ -329,12 +333,17 @@ class GpsWatchServer
     {
         $key_socket = $this->findBySocket($client);
         $id = $this->clients[$key_socket]["device_id"];
+        if( socket_write($client,$msg,strlen($msg)) === false ) 
+        { 
+            echo "Unable to write to socket:". socket_strerror(socket_last_error()); 
+            
+            return false;
+        } 
         $traffic = SQLSelectOne("select * from gw_traffic where date(DATE_TRAFFIC)=date(now()) and DEVICE_ID='$id'");
         if ($traffic['DEVICE_ID']) {
             $traffic['UPLOAD']+=strlen($msg);
             SQLUpdate("gw_traffic", $traffic); // update
         }
-        @socket_write($client,$msg,strlen($msg));
         return TRUE;
     }
 }

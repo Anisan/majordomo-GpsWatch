@@ -143,6 +143,8 @@ function admin(&$out) {
  if (!$out['HOST_PROXY']) { $out['HOST_PROXY']='52.28.132.157'; }
  $out['PORT_PROXY']=$this->config['PORT_PROXY'];
  if (!$out['PORT_PROXY']) { $out['PORT_PROXY']='8001'; }
+ $out['SCRIPTS']=SQLSelect("SELECT ID, TITLE FROM scripts ORDER BY TITLE");
+ $out['SCRIPT_NEWVOICE_ID'] = $this->config['SCRIPT_NEWVOICE_ID'];    
  if ($this->view_mode=='update_settings') {
    global $host;
    $this->config['HOST']=$host;
@@ -154,6 +156,9 @@ function admin(&$out) {
    $this->config['HOST_PROXY']=$hostProxy;
    global $portProxy;
    $this->config['PORT_PROXY']=$portProxy;
+   global $script_newvoice_id;
+   $this->config['SCRIPT_NEWVOICE_ID'] = $script_newvoice_id;
+            
    $this->saveConfig();
    setGlobal('cycle_GpsWatch','restart');
    $this->redirect("?");
@@ -234,6 +239,18 @@ function sendMessage($id,$msg)
     return $this->addCommand($id,"MESSAGE,".$out);
 }
 
+function sendVoice($id,$file)
+{
+    echo $file.PHP_EOL;
+    $data = file_get_contents($file);
+    $out = str_replace("\x7D", "\x7D\x01", $data);
+    $out = str_replace("\x5B", "\x7D\x02", $out);
+    $out = str_replace("\x5D", "\x7D\x03", $out);
+    $out = str_replace("\x2C", "\x7D\x04", $out);
+    $out = str_replace("\x2A", "\x7D\x05", $out);
+    return $this->addCommand($id,"TK,".$out);
+}
+
 function setUpdate($id,$second)
 {
     $this->update_settings($id,"UPDATE_INTERVAL",$second);
@@ -278,7 +295,7 @@ function initServer() {
     $host=$this->config['HOST'];
     $port=$this->config['PORT'];
     include_once(DIR_MODULES . 'app_GpsWatch/server.php');
-    $this->server = new GpsWatchServer($host, $port, $this->config['ENABLE_PROXY'], $this->config['HOST_PROXY'], $this->config['PORT_PROXY']);
+    $this->server = new GpsWatchServer($host, $port, $this->config['ENABLE_PROXY'], $this->config['HOST_PROXY'], $this->config['PORT_PROXY'],$this->config);
 
 }
 function cycle() {

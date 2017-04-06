@@ -63,13 +63,13 @@
 <form action="?" method="post" enctype="multipart/form-data" name="frmEdit" class="form-horizontal">
 <fieldset>
 <div class="form-group">
- <label class="control-label"[#if ERR_API_URL#] style="color:red;font-weight:bold"[#endif#]>
+ <label class="control-label"[#if ERR_HOST#] style="color:red;font-weight:bold"[#endif#]>
  HOST:(*)
  </label>
  <div class="controls"><input type="text" name="host" value="[#HOST#]" class="input"></div>
 </div>
 <div class="form-group">
- <label class="control-label"[#if ERR_API_KEY#] style="color:red;font-weight:bold"[#endif#]>
+ <label class="control-label"[#if ERR_PORT#] style="color:red;font-weight:bold"[#endif#]>
  PORT:(*)
  </label>
  <div class="controls"><input type="text" name="port" value="[#PORT#]" class="input"></div>
@@ -80,19 +80,29 @@
 </div>
 <div class='collapse [#if ENABLE_PROXY="1"#] in[#endif#]' id='proxy_settings'>
 <div class="form-group">
- <label class="control-label"[#if ERR_API_URL#] style="color:red;font-weight:bold"[#endif#]>
+ <label class="control-label"[#if ERR_HOST_PROXY#] style="color:red;font-weight:bold"[#endif#]>
  HOST PROXY:(*)
  </label>
  <div class="controls"><input type="text" name="hostProxy" value="[#HOST_PROXY#]" class="input"></div>
 </div>
 <div class="form-group">
- <label class="control-label"[#if ERR_API_KEY#] style="color:red;font-weight:bold"[#endif#]>
+ <label class="control-label"[#if ERR_PORT_PROXY#] style="color:red;font-weight:bold"[#endif#]>
  PORT PROXY:(*)
  </label>
  <div class="controls"><input type="text" name="portProxy" value="[#PORT_PROXY#]" class="input"></div>
 </div>
 </div>
-
+<div class="form-group ">
+	<label class="control-label" for="inputTitle">Execute new voice:</label>
+	<div class="col-lg-5">
+		<select name="script_newvoice_id" class="form-control [#if ERR_SCRIPT_ID#]alert-danger[#endif#]">
+			<option value="0">
+			[#begin SCRIPTS#]
+			<option value="[#ID#]"[#if ID="<#SCRIPT_NEWVOICE_ID#>"#] selected[#endif#]>[#TITLE#]
+			[#end SCRIPTS#]
+		</select>
+	</div>
+</div> 
 <div class="form-actions">
 <button type="submit" name="subm" value="Submit" class="btn btn-primary"><#LANG_UPDATE#></button>
 <input type="hidden" name="view_mode" value="update_settings">

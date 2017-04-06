@@ -2,10 +2,12 @@
 
 class Protocol
 {
+    private $script_newvoice;
     
-    function __construct()
+    function __construct($script_newvoice)
     {
-        
+        $this->script_newvoice = $script_newvoice;
+        echo "Script new voice - ".$script_newvoice.PHP_EOL;
     }
     
     function __destruct()
@@ -45,13 +47,12 @@ class Protocol
                 break;
             case "AL": // alarm
             //todo short data
-                $res = $this->commandLocation($id,$data);
+                if ($data != "")
+                    $res = $this->commandLocation($id,$data);
                 break;
             case "TK":
                 // voice message
-                $fp = fopen('/home/www/files/'.date('Y/m/d H:i:s').'.txt', 'w');
-                fwrite($fp, $data);
-                fclose($fp);
+                $res = $this->commandVoice($id,$data);
                 break;
             case "TKQ":
             //todo
@@ -87,6 +88,28 @@ class Protocol
         if ($data!="")
             $this->update_settings($id,"UPDATE_INTERVAL",$data);
         return "";
+    }
+    
+    function commandVoice($id,$data){
+        if (substr($data, 0)== "1")
+            return "";
+        $result = str_replace("\x7D\x01", "\x7D", $data);
+        $result = str_replace("\x7D\x02", "\x5B", $result);
+        $result = str_replace("\x7D\x03", "\x5D", $result);
+        $result = str_replace("\x7D\x04", "\x2C", $result);
+        $result = str_replace("\x7D\x05", "\x2A", $result);
+        $file = '/home/www/files/'.$id."_".date('Y.m.d_H:i:s').'.amr';
+        echo "Save voice message in ".$file.PHP_EOL;
+        $fp = fopen($file, 'a');
+        fwrite($fp, $result);
+        fclose($fp);
+        if ($this->script_newvoice) {
+            $params=array();
+            $params['device']=$id;
+            $params['path_voice']=$file;
+            runScript($this->script_newvoice, $params);
+        }  
+        return "TK,1";
     }
     
     function commandSos($id,$data){
