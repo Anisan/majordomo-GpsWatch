@@ -94,28 +94,34 @@ class GpsWatchServer
             if ($buf !== false) { // check disconnected client
                 continue;
             }
-            // remove client for $clients array
+             // remove client for $clients array
             $key_socket = $this->findBySocket($changed_socket);
             if (is_null($key_socket))
             {
                 $key_socket = $this->findByProxy($changed_socket);
             }
-            echo " Key:". $key_socket . PHP_EOL;
-            if (isset($this->clients[$key_socket]["socket"]))
-                socket_close($this->clients[$key_socket]["socket"]);
-            if (isset($this->clients[$key_socket]["proxy"]))
-                socket_close($this->clients[$key_socket]["proxy"]);
             $id = $this->clients[$key_socket]["id"];
-            $response = 'Client #'.$id ." ". $this->clients[$key_socket]["ip"] . ' has disconnected\n';
             // change online status
             $device = SQLSelectOne("SELECT * FROM gw_device WHERE DEVICE_ID='".$id."'");
             if ($device['DEVICE_ID']) {
                 $device['ONLINE']=0;
                 SQLUpdate("gw_device", $device); // update
             }
-            unset($this->clients[$key_socket]);
-            echo ($response);
+            $this->disposeSocket($key_socket);
+            
         }
+    }
+    
+    function disposeSocket($key_socket)
+    {
+        echo " Key:". $key_socket . PHP_EOL;
+        if (isset($this->clients[$key_socket]["socket"]))
+            socket_close($this->clients[$key_socket]["socket"]);
+        if (isset($this->clients[$key_socket]["proxy"]))
+            socket_close($this->clients[$key_socket]["proxy"]);
+        $id = $this->clients[$key_socket]["id"];
+        echo 'Client #'.$id ." ". $this->clients[$key_socket]["ip"] . ' has disconnected'.PHP_EOL;
+        unset($this->clients[$key_socket]);
     }
     
     function checkMessageRecieved()
@@ -170,6 +176,7 @@ class GpsWatchServer
         $this->processingMessage($socket_new, $first_line);
         
         unset($this->changed[0]);
+        print_r ($this->clients);
     }
     
     function createSocket()
@@ -235,7 +242,19 @@ class GpsWatchServer
                 $id = $match[2];
                 $len = hexdec($match[3]);
                 $cmd = $match[4];
-                $this->clients[$key_socket]["id"] = $id;
+                //clean sockets
+                if ($this->clients[$key_socket]["id"] == "")
+                {
+                    foreach ($this->clients as $key => $childarray)
+                    {
+                        if ($childarray["id"] == $id)
+                        {
+                            $this->disposeSocket($key);
+                        }
+                    }
+                    echo ("Update device ID:".$id.PHP_EOL);
+                    $this->clients[$key_socket]["id"] = $id;
+                }
                 //echo ("ID:".$id." Lenght:".$len." Command:".$cmd.PHP_EOL);
                 // record device
                 if ($isWatch)
