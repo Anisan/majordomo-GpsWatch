@@ -82,7 +82,7 @@ class GpsWatchServer
                 $command["SENDED"] = date('Y/m/d H:i:s');
                 SQLUpdate("gw_cmd",$command);
             }
-        }  
+        }
     }
     
     function checkDisconnect()
@@ -94,7 +94,7 @@ class GpsWatchServer
             if ($buf !== false) { // check disconnected client
                 continue;
             }
-             // remove client for $clients array
+            // remove client for $clients array
             $key_socket = $this->findBySocket($changed_socket);
             if (is_null($key_socket))
             {
@@ -132,7 +132,7 @@ class GpsWatchServer
             while(($flag=socket_recv($socket, $buffer, 1024 ,0))>0){
                 $data.=$buffer;
                 //echo $flag .",";
-                if (substr($buffer, -1, 1)== "]")
+                if (substr($buffer, -1, 1)=="]")
                     break;
             }
             //echo " end recv" . PHP_EOL;
@@ -185,10 +185,10 @@ class GpsWatchServer
             return NULL;
         /* Получаем порт сервиса WWW. */
         $service_port = $this->proxyport;
-
+        
         /* Получаем  IP адрес целевого хоста. */
         $address = gethostbyname($this->proxy);
-
+        
         /* Создаём  TCP/IP сокет. */
         $socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
         if ($socket === false) {
@@ -196,7 +196,7 @@ class GpsWatchServer
         } else {
             echo "OK.\n";
         }
-
+        
         echo "Пытаемся соединиться с '$address' на порту '$service_port'...";
         $result = socket_connect($socket, $address, $service_port);
         if ($result === false) {
@@ -213,7 +213,7 @@ class GpsWatchServer
         $isWatch = TRUE;
         $key_socket = $this->findBySocket($socket);
         if (is_null($key_socket)) $isWatch = FALSE;
-                
+        
         echo date("H:i:s")." Get message from ".$ip;
         if (!$isWatch)
         {
@@ -227,11 +227,11 @@ class GpsWatchServer
             echo " watch".PHP_EOL;
             echo ("Client #". $this->clients[$key_socket]["id"] ." ".  $ip . " recv ". trim($buffer) . PHP_EOL);
             if ($this->enable_proxy)
-                @socket_write($this->clients[$key_socket]["proxy"],$buffer,strlen($buffer)); 
+                @socket_write($this->clients[$key_socket]["proxy"],$buffer,strlen($buffer));
         }
         $re = '/\[(.+)\*(\d+)\*(\w+)\*(.+)\]/s';
         $str = trim($buffer);
-                
+        
         if (preg_match_all($re, $str, $matches,PREG_SET_ORDER))
         {
             // Print the entire match result [SG*8800000015*0002*LK][SG*8800000015*0002*LK]
@@ -282,13 +282,13 @@ class GpsWatchServer
                         SQLUpdate("gw_traffic", $traffic); // update
                     } else {
                         $traffic['DEVICE_ID']=$device['ID'];
-                                $traffic['DATE_TRAFFIC']=date('Y/m/d H:i:s');;
-                                $traffic['DOWNLOAD']=strlen($str);
-                                $traffic['UPLOAD']=0;
-                                SQLInsert("gw_traffic", $traffic);
+                        $traffic['DATE_TRAFFIC']=date('Y/m/d H:i:s');;
+                        $traffic['DOWNLOAD']=strlen($str);
+                        $traffic['UPLOAD']=0;
+                        SQLInsert("gw_traffic", $traffic);
                     }
                 }
-                        //todo check len command
+                //todo check len command
                 if (strlen($cmd) == $len)
                 {
                     //todo proc command
@@ -352,12 +352,12 @@ class GpsWatchServer
     {
         $key_socket = $this->findBySocket($client);
         $id = $this->clients[$key_socket]["device_id"];
-        if( socket_write($client,$msg,strlen($msg)) === false ) 
-        { 
-            echo "Unable to write to socket:". socket_strerror(socket_last_error()); 
+        if( socket_write($client,$msg,strlen($msg)) === false )
+        {
+            echo "Unable to write to socket:". socket_strerror(socket_last_error());
             
             return false;
-        } 
+        }
         $traffic = SQLSelectOne("select * from gw_traffic where date(DATE_TRAFFIC)=date(now()) and DEVICE_ID='$id'");
         if ($traffic['DEVICE_ID']) {
             $traffic['UPLOAD']+=strlen($msg);

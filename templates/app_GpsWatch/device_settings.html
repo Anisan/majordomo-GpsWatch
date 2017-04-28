@@ -43,29 +43,34 @@
 <div class="tab-content">
     <div id="panel_settings" class="tab-pane fade in">
         <div class="form-group">
-		<label class="control-label col-lg-1">Profile: </label>
-		<div class="col-lg-4">
-			<select name="profile" class="form-control" id="profile">
-				<option value="1"[#if PROFILE=="1"#] selected[#endif#]>Default</option>
-				<option value="2"[#if PROFILE=="2"#] selected[#endif#]>Decrease volume</option>
-				<option value="3"[#if PROFILE=="3"#] selected[#endif#]>Vibration</option>   
-				<option value="4"[#if PROFILE=="4"#] selected[#endif#]>Silent</option>   
-			</select>
-        </div>
-        <button onclick="sendCommandParam([#ID#],'profile',$('#profile').val());return false;" title=Set profile" class="btn btn-default">Set</button>
+            <label class="control-label col-lg-1">Profile: </label>
+            <div class="col-lg-4">
+                <select name="profile" class="form-control" id="profile">
+                    <option value="1"[#if PROFILE=="1"#] selected[#endif#]>Default</option>
+                    <option value="2"[#if PROFILE=="2"#] selected[#endif#]>Decrease volume</option>
+                    <option value="3"[#if PROFILE=="3"#] selected[#endif#]>Vibration</option>   
+                    <option value="4"[#if PROFILE=="4"#] selected[#endif#]>Silent</option>   
+                </select>
+            </div>
+            <button onclick="sendCommandParam([#ID#],'profile',$('#profile').val());return false;" title="Set profile" class="btn btn-default">Set</button>
         </div>
         <div class="form-group">
-		<label class="control-label col-lg-1">Updates: </label>
-		<div class="col-lg-4">
-			<select name="updates" class="form-control" id="updates">
-				<option value="60"[#if UPDATE_INTERVAL=="60"#] selected[#endif#]>1 min </option>
-				<option value="300"[#if UPDATE_INTERVAL=="300"#] selected[#endif#]>5 min</option>
-				<option value="600"[#if UPDATE_INTERVAL=="600"#] selected[#endif#]>10 min (optimal)</option>
-				<option value="1800"[#if UPDATE_INTERVAL=="1800"#] selected[#endif#]>30 min</option>   
-				<option value="3600"[#if UPDATE_INTERVAL=="3600"#] selected[#endif#]>1 hour</option>   
-			</select>
+            <label class="control-label col-lg-1">Updates: </label>
+            <div class="col-lg-4">
+                <select name="updates" class="form-control" id="updates">
+                    <option value="60"[#if UPDATE_INTERVAL=="60"#] selected[#endif#]>1 min </option>
+                    <option value="300"[#if UPDATE_INTERVAL=="300"#] selected[#endif#]>5 min</option>
+                    <option value="600"[#if UPDATE_INTERVAL=="600"#] selected[#endif#]>10 min (optimal)</option>
+                    <option value="1800"[#if UPDATE_INTERVAL=="1800"#] selected[#endif#]>30 min</option>   
+                    <option value="3600"[#if UPDATE_INTERVAL=="3600"#] selected[#endif#]>1 hour</option>   
+                </select>
+            </div>
+            <button onclick="sendCommandParam([#ID#],'update',$('#updates').val());return false;" title="Set updates" class="btn btn-default">Set</button>
         </div>
-        <button onclick="sendCommandParam([#ID#],'update',$('#updates').val());return false;" title=Set profile" class="btn btn-default">Set</button>
+        <div class="form-group">
+		    <label class="control-label col-lg-1">Log count:</label>
+            <div class="col-lg-4">[#LOGCOUNT#]</div>
+            <button onclick="return false;" title="Delete log" class="btn btn-default disabled">Delete</button>
         </div>
     </div>
     <div id="panel_commands" class="tab-pane fade in">
@@ -102,7 +107,7 @@
         [#end PHONEBOOK#]
         </tbody> 
         </table>
-        <button onclick="sendCommand(,'msg',1);return false;" title="Save" class="btn btn-primary">Save</button><br>
+        <button onclick="sendCommand(,'msg',1);return false;" title="Save" class="btn btn-primary disabled">Save</button><br>
     </div>
     <div id="panel_sos" class="tab-pane fade in">
         <div class="form-horizontal">
@@ -125,7 +130,7 @@
             </div>
         </div>
         <div class="form-actions">
-        <button onclick="sendSOS([#ID#]);return false;" title=Set profile" class="btn btn-default">Save</button>
+        <button onclick="sendSOS([#ID#]);return false;" title="Set profile" class="btn btn-default">Save</button>
         </div>
         </div>
     </div>
