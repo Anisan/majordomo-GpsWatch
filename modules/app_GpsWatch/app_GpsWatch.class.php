@@ -145,6 +145,7 @@ class app_GpsWatch extends module {
         if (!$out['PORT_PROXY']) { $out['PORT_PROXY']='8001'; }
         $out['SCRIPTS']=SQLSelect("SELECT ID, TITLE FROM scripts ORDER BY TITLE");
         $out['SCRIPT_NEWVOICE_ID'] = $this->config['SCRIPT_NEWVOICE_ID'];
+        $out['MAPPROVIDER'] = $this->config['MAPPROVIDER'];
         if ($this->view_mode=='update_settings') {
             global $host;
             $this->config['HOST']=$host;
@@ -158,6 +159,8 @@ class app_GpsWatch extends module {
             $this->config['PORT_PROXY']=$portProxy;
             global $script_newvoice_id;
             $this->config['SCRIPT_NEWVOICE_ID'] = $script_newvoice_id;
+            global $mapprovider;
+            $this->config['MAPPROVIDER'] = $mapprovider;
             
             $this->saveConfig();
             setGlobal('cycle_GpsWatch','restart');
@@ -204,6 +207,7 @@ class app_GpsWatch extends module {
     */
     function usual(&$out) {
         $this->getConfig();
+        $out['MAPPROVIDER'] = $this->config['MAPPROVIDER']; 
         require(DIR_MODULES.$this->name.'/usual.inc.php');
     }
     
