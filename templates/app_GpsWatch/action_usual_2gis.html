@@ -1,4 +1,4 @@
-<script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU" type="text/javascript"></script>
+<script src="http://maps.api.2gis.ru/2.0/loader.js?pkg=full" type="text/javascript"></script>
 
 <script type="text/javascript" language="javascript">
     var updateTimeOut;
@@ -23,7 +23,8 @@
     }
 
     function updateLocations() {
-        var url = "?ajax=1&op=getlocations";
+        var url = "?";
+        url += '&ajax=1&op=getlocations';
 
         $.ajax({
             url: url
@@ -34,8 +35,7 @@
                 var locationsLength = locations.length;
                 for (var i = 0; i < locationsLength; i++) {
                     var location = locations[i];
-                    var myCircle = new ymaps.Circle([[location.LAT, location.LON], location.RANGE], { hintContent: location.TITLE });
-                    map.geoObjects.add(myCircle);
+                    DG.circle([parseFloat(location.LAT), parseFloat(location.LON)], parseFloat(location.RANGE)).addTo(map);
                 }
             }
         });
@@ -43,7 +43,7 @@
 
         return false;
     }
-
+    
     function getHexColor(colorStr) {
         var a = document.createElement('div');
         a.style.color = colorStr;
@@ -52,18 +52,18 @@
         return (colors.length >= 3) ? '#' + (((1 << 24) + (colors[0] << 16) + (colors[1] << 8) + colors[2]).toString(16).substr(1)) : false;
     }
 
+
     function updateRoute(device_id, color) {
         var period = document.getElementById("selPeriod").value;
         var from = document.getElementById("datefrom").value;
         var to = document.getElementById("dateto").value;
-        var pathType = document.getElementById("pathType").value;
         var clr = getHexColor(color);
         var url = "?ajax=1&op=getroute&period=" + period + "&from=" + from + "&to=" + to + "&device_id=" + device_id;
-        //console.log(url);
+        console.log(url);
         $.ajax({
             url: url
         }).done(function (data) {
-            //console.log(data);
+        console.log(data);
             var obj = jQuery.parseJSON(data);
             if (obj.PATH.length > 0) {
 
@@ -71,62 +71,35 @@
 
                 var geometry = new Array();
                 points.forEach(function (item, i, points) {
-                    geometry.push(new Array(item.LAT, item.LON));
+                    geometry.push(new Array(parseFloat(item.LAT), parseFloat(item.LON)))
                 });
-
-                if (pathType == "route") {
-                    ymaps.route(geometry, { mapStateAutoApply: true }).then(
-                        function (route) {
-                            route.getPaths().options.set({
-                                strokeColor: clr,
-                                strokeWidth: 4,
-                                opacity: 0.9
-                            });
-                            map.geoObjects.add(route.getPaths());
-                        },
-                        function (error) {
-                            console.log('Возникла ошибка: ' + error.message);
-                        }
-                    );
-                }
-                else {
-                        properties = {
-                        },
-                        options = {
-                            draggable: false,
-                            strokeColor: clr,
-                            strokeWidth: 4
-                        },
-                        polyline = new ymaps.Polyline(geometry, properties, options);
-                    map.geoObjects.add(polyline);
-
-                    points.forEach(function (item, i, arr) {
-                        var myPlacemark = new ymaps.Placemark([item.LAT, item.LON], {
-                            hintContent: item.TITLE,
-                            balloonContent: item.TITLE
-                        }, {
-                            iconLayout: 'default#image',
-                            iconImageHref: '../templates/app_GpsWatch/img/' + points[i].PROVIDER + '.png',
-                            iconImageSize: [15, 15],
-                            iconImageOffset: [-8, -8]
-                        });
-                        map.geoObjects.add(myPlacemark);
+                var polyline = DG.polyline(geometry, { color: clr }).addTo(map);
+                map.polylines.push(polyline);
+                
+                points.forEach(function (item, i, arr) {
+                        var mapMarker = DG.marker([parseFloat(item.LAT), parseFloat(item.LON)], {
+                        icon: DG.icon(
+                        { iconUrl: '../templates/app_GpsWatch/img/' + points[i].PROVIDER + '.png',
+                          iconSize: [15, 15],
+                          iconAnchor: [8, 8]
+                        }),
+                        title: item.TITLE,
+                        alt: item.TITLE
+                        }).addTo(map);
+                        map.markers.push(mapMarker);
                     });
                     
-                    // увеличиваем масштаб так, чтобы было видно всю ломаную
-                    map.setBounds(polyline.geometry.getBounds(), { checkZoomRange: true });
-
-                }
-
+                // увеличиваем масштаб так, чтобы было видно всю ломаную
+                map.fitBounds(polyline.getBounds());
             }
-
         });
         return false;
     }
 
 
     function updateMarkers() {
-        var url = "?ajax=1&op=getmarkers";
+        var url = "?";
+        url += '&ajax=1&op=getmarkers';
         $.ajax({
             url: url
         }).done(function (data) {
@@ -137,24 +110,32 @@
             for (var i = 0; i < markersCnt; i++) {
                 var marker = markers[i];
                 var temp_id = marker.ID;
-                //if (!checkMarkerExists(temp_id)) {
-
-                var myPlacemark = new ymaps.Placemark(
-                    [marker.LAT, marker.LON],
-                    {
-                        hintContent: marker.HTML
-                    },
-                    {
-                        preset: 'islands#' + marker.COLOR + 'CircleDotIcon'
+                if (!checkMarkerExists(temp_id)) {
+                    var mapMarker = DG.marker([parseFloat(marker.LAT), parseFloat(marker.LON)], {
+                        icon: DG.icon({ iconUrl: 'http://labs.google.com/ridefinder/images/mm_20_' + marker.COLOR + '.png' }),
+                        alt: marker.HTML,
+                        title: marker.NAME
+                    }).addTo(map);
+                    map.markers.push(mapMarker);
+                } else {
+                    var mk = getMarkerIndex(temp_id);
+                    var marker_obj = map.markers[mk];
+                    var lat = parseFloat(marker.LAT);
+                    var lng = parseFloat(marker.LON);
+                    var oldLatLng = marker_obj.getLatLng();
+                    var newLatLng = DG.LatLng(lat, lng);
+                    marker_obj.setLatLng(newLatLng);
+                    if ((oldLatLng.lng() != newLatLng.lng()) || (oldLatLng.lat() != newLatLng.lat())) {
+                        // marker moved
+                        map.flyTo(newLatLng);
                     }
-                );
-                map.geoObjects.add(myPlacemark);
+                }
             }
-            updateTimeOut = setTimeout('updateMarkers();', 3000);
+            updateTimeOut = setTimeout('updateMarkers();', [#if MAP_REFRESH_TIMEOUT== ""#]3[#else#][#MAP_REFRESH_TIMEOUT#][#endif#]*1000);
 
-        });
-        return false;
-    }
+    });
+    return false;
+}
 
 
 
@@ -185,20 +166,38 @@
     } else { /* Браузер не поддерживает геолокацию */ }
     [#endif#]
 
-    $(document).ready(function () {
-        ymaps.ready(function () {
-            map = new ymaps.Map('map', {
-                center: [startLat, startLon],
-                zoom: 17,
-                type: 'yandex#map'
-            });
-            legendUpdate();
-            resizeMap();
+    DG.then(function () {
+        map = DG.map('map', {
+            center: [startLat, startLon],
+            zoom: 13,
+            geoclicker: true
         });
+        map.markers = new Array();
+        map.polylines = new Array()
+        DG.control.location({ position: 'bottomright' }).addTo(map);
+        DG.control.traffic().addTo(map);
+    });
+
+    $(document).ready(function () {
+        updateMarkers();
+        resizeMap();
+
+        [#begin DEVICES#]
+        updateRoute([#ID#], '[#COLOR#]');
+        [#end DEVICES#]
+        updateLocations();
+
     });
 
     function legendUpdate() {
-        map.geoObjects.removeAll();
+        for (var i = 0, marker; marker = map.markers[i]; i++) {
+            marker.remove();
+        }
+        map.markers = [];
+        for (var j = 0, polyline; polyline = map.polylines[j]; j++) {
+            polyline.remove();
+        }
+        map.polylines = [];
         updateMarkers();
         [#begin DEVICES#]
         updateRoute([#ID#], '[#COLOR#]');
@@ -206,11 +205,19 @@
         updateLocations();
         return false;
     }
+
     function legendClicked(id, color) {
-        map.geoObjects.removeAll();
+        for (var i = 0, marker; marker = map.markers[i]; i++) {
+            marker.remove();
+        }
+        map.markers = [];
+        for (var j = 0, polyline; polyline = map.polylines[j]; j++) {
+            polyline.remove();
+        }
+        map.polylines = [];
         updateMarkers();
-        updateRoute(id, color);
         updateLocations();
+        updateRoute(id, color);
         return false;
     }
 
@@ -245,12 +252,12 @@
             </td>
             <td>
                 <select name="period" onChange='periodUpdated();' id='selPeriod' class="form-control input-sm">
-                        <option value="today"[#if PERIOD="today"#] selected[#endif#]><#LANG_PERIOD_TODAY#>
-                        <option value="day"[#if PERIOD="day"#] selected[#endif#]><#LANG_PERIOD_DAY#>
-                        <option value="week"[#if PERIOD="week"#] selected[#endif#]><#LANG_PERIOD_WEEK#>
-                        <option value="month"[#if PERIOD="month"#] selected[#endif#]><#LANG_PERIOD_MONTH#>
-                        <option value="custom"[#if PERIOD="custom"#] selected[#endif#]><#LANG_PERIOD_CUSTOM#>...
-                    </select>
+  <option value="today"[#if PERIOD="today"#] selected[#endif#]><#LANG_PERIOD_TODAY#>
+  <option value="day"[#if PERIOD="day"#] selected[#endif#]><#LANG_PERIOD_DAY#>
+  <option value="week"[#if PERIOD="week"#] selected[#endif#]><#LANG_PERIOD_WEEK#>
+  <option value="month"[#if PERIOD="month"#] selected[#endif#]><#LANG_PERIOD_MONTH#>
+  <option value="custom"[#if PERIOD="custom"#] selected[#endif#]><#LANG_PERIOD_CUSTOM#>...
+ </select>
             </td>
             <td>
                 <span id='customDates' [#if PERIOD!="custom" #]style="display:none" [#endif#]>
@@ -276,16 +283,8 @@
                     <#LANG_SEARCH#>
                 </a>
             </td>
-            <td> Type: </td>
-            <td>
-                <select id='pathType' onChange='legendUpdate();' class="form-control input-sm">
-                        <option value="line" selected>Polyline
-                        <option value="route">Route
-                </select>
-            </td>
-
         </tr>
     </table>
 </div>
 
-<div id="map" style="width: 100%; height: 820px;"></div>
+<div id="map" style="width: 100%; height: 620px;"></div>

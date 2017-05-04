@@ -43,12 +43,15 @@ class Protocol
                 $res = $this->commandLink($id,$data);
                 break;
             case "UD":
+            case "UD2":
                 $res = $this->commandLocation($id,$data);
                 break;
             case "AL": // alarm
                 //todo short data
-                if ($data != "")
-                    $res = $this->commandLocation($id,$data);
+                if ($data != ""){
+                    $this->commandLocation($id,$data);
+                    $res = "AL";
+                }
                 break;
             case "TK":
                 // voice message
