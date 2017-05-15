@@ -8,6 +8,29 @@ global $from;
 
 $colors=array('red', 'blue', 'green', 'orange', 'brown', 'gray', 'yellow', 'white');
 
+function getDirection($bearing) {
+  $cardinalDirections = array(
+    array('N', 337.5, 22.5),
+    array('NE', 22.5, 67.5),
+    array('E', 67.5, 112.5),
+    array('SE', 112.5, 157.5),
+    array('S', 157.5, 202.5),
+    array('SW', 202.5, 247.5),
+    array('W', 247.5, 292.5),
+    array('NW', 292.5, 337.5)
+  );
+
+  $count = count($cardinalDirections);
+
+  for ($i = 0; $i < $count; $i++) {
+    if ($bearing >= $cardinalDirections[$i][1] && $bearing < $cardinalDirections[$i][2]) {
+      $direction = $cardinalDirections[$i][0];
+      $i = $count;
+    }
+  }
+  return $direction;
+}
+
 $qry=1;
 if ($period=='week') {
     $qry.=" AND (UNIX_TIMESTAMP(NOW())-UNIX_TIMESTAMP(ADDED))<7*24*60*60";
@@ -81,7 +104,16 @@ if ($ajax) {
         $points=array();
         for($i=0;$i<$total;$i++) {
             $coords[]=array($log[$i]['LAT'], $log[$i]['LON']);
-            $points[]=array('ID'=>$log[$i]['ID'], 'LAT'=>$log[$i]['LAT'], 'LON'=>$log[$i]['LON'], 'PROVIDER'=>$log[$i]['PROVIDER'] ,'TITLE' => $log[$i]['ADDED']);
+            $hint  = "Date: ".$log[$i]['ADDED']."<br>";
+            $hint .= "Speed: ".$log[$i]['SPEED']."km/h<br>";
+            $hint .= "Direction: ". getDirection($log[$i]['DIRECTION'])." (".$log[$i]['DIRECTION']." degree)<br>";
+            $hint .= "Altitude:".$log[$i]['ALT']."m";
+            $points[]=array($log[$i]['ID'],
+                    'LAT'=>$log[$i]['LAT'],
+                    'LON'=>$log[$i]['LON'],
+                    'PROVIDER'=>$log[$i]['PROVIDER'] ,
+                    'TITLE' => $log[$i]['ADDED'],
+                    'HINT' => $hint);
         }
         $res=array();
         if ($total) {

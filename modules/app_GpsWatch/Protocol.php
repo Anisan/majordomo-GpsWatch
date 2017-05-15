@@ -233,7 +233,7 @@ function parseLocationData($id,$data){
     if ($parts[6] == "W") $lon = -$lon;
     $batt = $parts[12];
     
-    $speed = 1.60934 * floatval($parts[7]); // 7 Speed	5.21	5.21miles/hour.
+    $speed = floatval($parts[7]) / 1.60934; // 7 Speed	5.21	5.21miles/hour.
     $dir = $parts[8]; //8 Direction	152	The direction is in 152 degree.
     $alt = $parts[9]; //9 Alititude	100	The unit is meter
     

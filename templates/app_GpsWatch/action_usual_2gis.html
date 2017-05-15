@@ -85,7 +85,7 @@
                         }),
                         title: item.TITLE,
                         alt: item.TITLE
-                        }).addTo(map);
+                        }).addTo(map).bindPopup(item.HINT);;
                         map.markers.push(mapMarker);
                     });
                     
@@ -115,7 +115,7 @@
                         icon: DG.icon({ iconUrl: 'http://labs.google.com/ridefinder/images/mm_20_' + marker.COLOR + '.png' }),
                         alt: marker.HTML,
                         title: marker.NAME
-                    }).addTo(map);
+                    }).addTo(map).bindPopup(marker.HTML);
                     map.markers.push(mapMarker);
                 } else {
                     var mk = getMarkerIndex(temp_id);

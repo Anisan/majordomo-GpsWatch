@@ -102,8 +102,8 @@
 
                     points.forEach(function (item, i, arr) {
                         var myPlacemark = new ymaps.Placemark([item.LAT, item.LON], {
-                            hintContent: item.TITLE,
-                            balloonContent: item.TITLE
+                            hintContent: item.HINT,
+                            balloonContent: item.HINT
                         }, {
                             iconLayout: 'default#image',
                             iconImageHref: '../templates/app_GpsWatch/img/' + points[i].PROVIDER + '.png',

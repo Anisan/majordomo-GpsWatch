@@ -98,10 +98,20 @@
                 var points = obj.POINTS;
                 points.forEach(function (item, i, arr) {
                     var marker = new google.maps.Marker({
-                        icon: '../templates/app_GpsWatch/img/' + points[i].PROVIDER + '.png',
+                        icon: 
+                        {
+                            url:'../templates/app_GpsWatch/img/' + points[i].PROVIDER + '.png',
+                            anchor: new google.maps.Point(8, 8),
+                        },
                         position: { lat: parseFloat(points[i].LAT), lng: parseFloat(points[i].LON) },
                         title: points[i].TITLE,
                         map: map
+                    });
+                    marker['infowindow'] = new google.maps.InfoWindow({
+                        content: points[i].HINT
+                    });
+                    marker.addListener('click', function () {
+                        this['infowindow'].open(map, this);
                     });
                     map.markers.push(marker);
                 });
