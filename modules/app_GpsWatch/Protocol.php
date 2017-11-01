@@ -101,7 +101,7 @@ function commandVoice($id,$data){
     $result = str_replace("\x7D\x03", "\x5D", $result);
     $result = str_replace("\x7D\x04", "\x2C", $result);
     $result = str_replace("\x7D\x05", "\x2A", $result);
-    $file = '/home/www/files/'.$id."_".date('Y.m.d_H:i:s').'.amr';
+    $file = ROOT.'files'. DIRECTORY_SEPARATOR .$id."_".date('Y.m.d_H:i:s').'.amr';
     echo "Save voice message in ".$file.PHP_EOL;
     $fp = fopen($file, 'a');
     fwrite($fp, $result);
@@ -233,7 +233,7 @@ function parseLocationData($id,$data){
     if ($parts[6] == "W") $lon = -$lon;
     $batt = $parts[12];
     
-    $speed = floatval($parts[7]) / 1.60934; // 7 Speed	5.21	5.21miles/hour.
+    $speed = floatval($parts[7]);// km/h / 1.60934; // 7 Speed	5.21	5.21miles/hour.
     $dir = $parts[8]; //8 Direction	152	The direction is in 152 degree.
     $alt = $parts[9]; //9 Alititude	100	The unit is meter
     
