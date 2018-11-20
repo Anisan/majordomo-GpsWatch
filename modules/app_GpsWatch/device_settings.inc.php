@@ -1,6 +1,6 @@
 <?php
 $table_name='gw_settings';
-$rec=SQLSelectOne("SELECT * FROM $table_name WHERE DEVICE_ID=$id");
+$rec=SQLSelectOne("SELECT * FROM $table_name WHERE DEVICE_ID='$id'");
 
 $phonebook = array();
 for ($i = 1; $i <= 10; $i++) {
@@ -12,7 +12,7 @@ for ($i = 1; $i <= 10; $i++) {
 }
 $out["PHONEBOOK"] = $phonebook;
 
-$logCount=SQLSelectOne("SELECT count(*) as TOTAL FROM gw_log WHERE DEVICE_ID=$id");
+$logCount=SQLSelectOne("SELECT count(*) as TOTAL FROM gw_log WHERE DEVICE_ID='$id'");
 $out["LOGCOUNT"] = $logCount["TOTAL"];
 
 $sos = explode(",",$rec['SOS']);
